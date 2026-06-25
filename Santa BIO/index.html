@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Santamorera</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter',sans-serif}
+body{background:#0a0a0f;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.bg-layer{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;background:url('background/bg.gif') center/cover no-repeat,linear-gradient(135deg,#0a0a12 0%,#12101f 25%,#0d0b18 50%,#0f0a1a 75%,#0a0a12 100%)}
+.bg-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;background:radial-gradient(ellipse at center,rgba(10,10,18,0.3) 0%,rgba(10,10,18,0.6) 100%)}
+canvas#smokeCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none;opacity:0.45}
+canvas#rainCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:3;pointer-events:none}
+.content{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;width:100%;padding:20px}
+.glass-card{position:relative;background:linear-gradient(135deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0.03) 100%);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.12);border-radius:28px;padding:50px 56px 44px;max-width:460px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.4),0 0 80px rgba(120,80,200,0.06),inset 0 1px 0 rgba(255,255,255,0.1);overflow:hidden;animation:cardAppear 1.2s cubic-bezier(0.16,1,0.3,1) forwards;opacity:0;transform:translateY(30px) scale(0.97)}
+@keyframes cardAppear{to{opacity:1;transform:translateY(0) scale(1)}}
+.glass-card::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(from 180deg at 50% 50%,transparent 0deg,rgba(255,255,255,0.03) 60deg,transparent 120deg,rgba(160,130,255,0.04) 200deg,transparent 260deg,rgba(255,255,255,0.02) 320deg,transparent 360deg);animation:glareRotate 12s linear infinite;pointer-events:none}
+@keyframes glareRotate{to{transform:rotate(360deg)}}
+.glass-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2) 20%,rgba(255,255,255,0.3) 50%,rgba(255,255,255,0.2) 80%,transparent);pointer-events:none}
+.avatar-glow{width:96px;height:96px;border-radius:50%;margin:0 auto 28px;position:relative;display:flex;align-items:center;justify-content:center}
+.avatar-glow::before{content:'';position:absolute;inset:-3px;border-radius:50%;background:rgba(255,255,255,0.1);opacity:0.5}
+.avatar-glow::after{content:'';position:absolute;inset:0;border-radius:50%;background:#16141f}
+.avatar-glow img{position:relative;z-index:1;width:100%;height:100%;border-radius:50%;object-fit:cover}
+.avatar-glow svg{position:relative;z-index:1;width:48px;height:48px;color:rgba(167,139,250,0.9)}
+h1{font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:600;color:#fff;letter-spacing:1px;margin-bottom:10px;text-shadow:0 0 40px rgba(140,100,255,0.15)}
+.subtitle{font-size:0.95rem;font-weight:300;color:rgba(255,255,255,0.5);letter-spacing:0.5px;margin-bottom:20px}
+.player{width:100%;max-width:320px;margin:0 auto 32px}
+.player-info{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.play-btn{width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.75);transition:all 0.3s;flex-shrink:0}
+.play-btn:hover{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.25);color:#fff;transform:scale(1.08)}
+.play-btn svg{width:16px;height:16px}
+.player-text{flex:1;text-align:left;min-width:0}
+.track-name{font-size:0.82rem;font-weight:500;color:rgba(255,255,255,0.8);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track-time{display:flex;justify-content:space-between;font-size:0.7rem;font-weight:300;color:rgba(255,255,255,0.4);font-variant-numeric:tabular-nums}
+.progress-container{width:100%;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;cursor:pointer;position:relative;transition:height 0.2s}
+.progress-container:hover{height:6px}
+.progress-bar{height:100%;background:#e8edf2;border-radius:2px;width:0%;transition:width 0.1s linear;position:relative}
+.progress-bar::after{content:'';position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:10px;height:10px;border-radius:50%;background:#e8edf2;opacity:0;transition:opacity 0.2s;box-shadow:0 0 10px rgba(232,237,242,0.4)}
+.progress-container:hover .progress-bar::after{opacity:1}
+.buttons{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn{position:relative;width:52px;height:52px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.35s cubic-bezier(0.16,1,0.3,1);text-decoration:none;color:rgba(255,255,255,0.65);overflow:hidden}
+.btn::before{content:'';position:absolute;inset:0;border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,0.1),transparent);opacity:0;transition:opacity 0.35s}
+.btn:hover{transform:translateY(-4px) scale(1.08);border-color:rgba(255,255,255,0.25);color:#fff;box-shadow:0 8px 30px rgba(120,80,220,0.2),0 0 15px rgba(140,100,255,0.1)}
+.btn:hover::before{opacity:1}
+.btn:active{transform:translateY(-2px) scale(1.04)}
+.btn svg{width:22px;height:22px;position:relative;z-index:1;transition:all 0.35s}
+.btn.telegram:hover{border-color:rgba(38,165,224,0.4);box-shadow:0 8px 30px rgba(38,165,224,0.15)}
+.btn.discord:hover{border-color:rgba(88,101,242,0.4);box-shadow:0 8px 30px rgba(88,101,242,0.15)}
+.btn.spotify:hover{border-color:rgba(30,215,96,0.4);box-shadow:0 8px 30px rgba(30,215,96,0.15)}
+.btn.yandex:hover{border-color:rgba(255,204,0,0.4);box-shadow:0 8px 30px rgba(255,204,0,0.15)}
+.btn.steam:hover{border-color:rgba(102,153,204,0.4);box-shadow:0 8px 30px rgba(102,153,204,0.15)}
+.copyright{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:10;font-size:0.75rem;font-weight:300;color:rgba(255,255,255,0.2);letter-spacing:1px}
+.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(100px);z-index:1000;background:linear-gradient(135deg,rgba(30,25,50,0.95),rgba(20,18,35,0.95));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:14px 28px;color:#fff;font-size:0.88rem;font-weight:400;opacity:0;transition:all 0.5s cubic-bezier(0.16,1,0.3,1);pointer-events:none;white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,0.4),0 0 60px rgba(120,80,200,0.08)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-icon{display:inline-block;margin-right:10px;vertical-align:middle}
+.toast-text{vertical-align:middle}
+@media(max-width:520px){
+.glass-card{padding:36px 28px 32px;margin:0 16px;border-radius:22px}
+h1{font-size:1.9rem}
+.subtitle{font-size:0.85rem;margin-bottom:28px}
+.buttons{gap:10px}
+.btn{width:46px;height:46px;border-radius:14px}
+.btn svg{width:20px;height:20px}
+.avatar-glow{width:76px;height:76px;margin-bottom:22px}
+.avatar-glow svg{width:38px;height:38px}
+}
+</style>
+</head>
+<body>
+<div class="bg-layer"></div>
+<div class="bg-overlay"></div>
+<canvas id="smokeCanvas"></canvas>
+<canvas id="rainCanvas"></canvas>
+<div class="content">
+<div class="glass-card">
+<div class="avatar-glow">
+<img src="avatar/avatar.png" alt="Аватар" id="avatarImg" onerror="this.style.display='none';document.getElementById('avatarFallback').style.display='block'">
+<svg id="avatarFallback" style="display:none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+<circle cx="12" cy="7" r="4"/>
+</svg>
+</div>
+<h1>Santamorera</h1>
+<p class="subtitle">Тот — кто всегда в абсолюте</p>
+<div class="player">
+<div class="player-info">
+<button class="play-btn" id="playBtn" aria-label="Воспроизвести">
+<svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+<svg id="pauseIcon" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+</button>
+<div class="player-text">
+<div class="track-name" id="trackName">Любимый трек</div>
+<div class="track-time">
+<span id="currentTime">0:00</span>
+<span id="trackDuration">0:00</span>
+</div>
+</div>
+</div>
+<div class="progress-container" id="progressContainer">
+<div class="progress-bar" id="progressBar"></div>
+</div>
+</div>
+<audio id="audioPlayer" preload="metadata"></audio>
+<div class="buttons">
+<a href="https://t.me/@pfmpeg" target="_blank" rel="noopener" class="btn telegram" aria-label="Telegram">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 1 0 24 12.056A12.014 12.014 0 0 0 11.944 0Zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472c-.18 1.898-.962 6.502-1.36 8.627c-.168.9-.499 1.201-.82 1.23c-.696.065-1.225-.46-1.9-.902c-1.056-.693-1.653-1.124-2.678-1.8c-1.185-.78-.417-1.21.258-1.91c.177-.184 3.247-2.977 3.307-3.23c.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345c-.48.33-.913.49-1.302.48c-.428-.008-1.252-.241-1.865-.44c-.752-.245-1.349-.374-1.297-.789c.027-.216.325-.437.893-.663c3.498-1.524 5.83-2.529 6.998-3.014c3.332-1.386 4.025-1.627 4.476-1.635Z"/></svg>
+</a>
+<button class="btn discord" onclick="copyToClipboard('skorti8','Discord ник скопирован')" aria-label="Discord">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03ZM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.095 2.157 2.42c0 1.333-.956 2.418-2.157 2.418Zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.095 2.157 2.42c0 1.333-.946 2.418-2.157 2.418Z"/></svg>
+</button>
+<button class="btn spotify" onclick="copyToClipboard('sone','Spotify ник скопирован')" aria-label="Spotify">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12s12-5.4 12-12S18.66 0 12 0Zm5.521 17.34c-.24.359-.66.48-1.021.24c-2.82-1.74-6.36-2.101-10.561-1.141c-.418.122-.779-.179-.899-.539c-.12-.421.18-.78.54-.9c4.56-1.021 8.52-.6 11.64 1.32c.42.18.479.659.301 1.02Zm1.44-3.3c-.301.42-.841.6-1.262.3c-3.239-1.98-8.159-2.58-11.939-1.38c-.479.12-1.02-.12-1.14-.6c-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2Zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721c-.18-.601.18-1.2.72-1.381c4.26-1.26 11.28-1.02 15.721 1.621c.539.3.719 1.02.419 1.56c-.299.421-1.02.599-1.559.3Z"/></svg>
+</button>
+<a href="https://music.yandex.ru/users/Santamorera/playlists" target="_blank" rel="noopener" class="btn yandex" aria-label="Yandex Music">
+<svg viewBox="0 0 50 50" fill="currentColor"><path d="M 21.833984 2.2246094 C 11.968984 3.6656094 2.0332031 11.919266 2.0332031 25.072266 C 2.0332031 37.853266 12.356141 48 24.994141 48 C 39.232141 48 51.795844 34.161797 46.964844 18.216797 C 46.756844 17.531797 45.929094 17.260984 45.371094 17.708984 L 41.091797 21.142578 C 40.801797 21.374578 40.673234 21.746328 40.740234 22.111328 C 40.911234 23.049328 41 24.018 41 25 C 41 34.102 33.409937 41.421469 24.210938 40.980469 C 16.699938 40.620469 9.6656875 33.836797 9.0546875 26.341797 C 8.3656875 17.888797 14.256344 10.672812 22.152344 9.2578125 C 22.638344 9.1718125 23 8.7664375 23 8.2734375 L 23 3.2128906 C 23 2.5938906 22.445984 2.1356094 21.833984 2.2246094 z M 30.017578 2.5878906 C 29.47274 2.5848828 29 3.0147656 29 3.5878906 L 29 18.078125 C 27.822 17.396125 26.459 17 25 17 C 20.582 17 17 20.582 17 25 C 17 29.418 20.582 33 25 33 C 29.418 33 33 29.418 33 25 L 33 11.150391 C 34.612 12.083391 36.051141 13.279313 37.244141 14.695312 C 37.679141 15.212312 38.488609 15.161844 38.849609 14.589844 L 41.615234 10.214844 C 41.861234 9.8268438 41.818094 9.3104688 41.496094 8.9804688 C 40.422094 7.8784687 36.703906 4.1571875 30.253906 2.6171875 C 30.174281 2.5983125 30.095412 2.5883203 30.017578 2.5878906 z"></path></svg>
+</a>
+<a href="https://steamcommunity.com/id/Santamorera_prod_EzZ/" target="_blank" rel="noopener" class="btn steam" aria-label="Steam">
+<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59c.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524c2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159c0 1.875-1.515 3.396-3.39 3.396c-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 12-5.373 12-12s-5.373-12-12.001-12ZM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25c1.297.539 2.793-.076 3.332-1.375c.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455c-.397.957-1.497 1.41-2.454 1.012Zm11.415-9.303a3.015 3.015 0 0 0-3.015-3.015a3.015 3.015 0 1 0 3.015 3.015Zm-5.273-.005c0-1.264 1.027-2.286 2.291-2.286c1.263 0 2.284 1.022 2.284 2.286c0 1.263-1.021 2.285-2.284 2.285c-1.264 0-2.291-1.022-2.291-2.285Z"/></svg>
+</a>
+</div>
+</div>
+</div>
+<div class="copyright">By Santamorera</div>
+<div class="toast" id="toast">
+<span class="toast-icon">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+</span>
+<span class="toast-text" id="toastText"></span>
+</div>
+<script>
+function copyToClipboard(text, message) {
+    navigator.clipboard.writeText(text).then(function() {
+        showToast(message);
+    }).catch(function() {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast(message);
+    });
+}
+
+var toastTimer;
+function showToast(msg) {
+    var toast = document.getElementById('toast');
+    var toastText = document.getElementById('toastText');
+    toastText.textContent = msg;
+    toast.classList.remove('show');
+    clearTimeout(toastTimer);
+    requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+            toast.classList.add('show');
+            toastTimer = setTimeout(function() {
+                toast.classList.remove('show');
+            }, 2400);
+        });
+    });
+}
+
+var smokeCanvas = document.getElementById('smokeCanvas');
+var sCtx = smokeCanvas.getContext('2d');
+var rainCanvas = document.getElementById('rainCanvas');
+var rCtx = rainCanvas.getContext('2d');
+var W, H;
+
+function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    smokeCanvas.width = W;
+    smokeCanvas.height = H;
+    rainCanvas.width = W;
+    rainCanvas.height = H;
+}
+resize();
+window.addEventListener('resize', resize);
+
+var smokeParts = [];
+function initSmoke() {
+    for (var i = 0; i < 60; i++) {
+        smokeParts.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            r: Math.random() * 200 + 100,
+            vx: (Math.random() - 0.5) * 0.3,
+            vy: (Math.random() - 0.5) * 0.15,
+            alpha: Math.random() * 0.06 + 0.02,
+            phase: Math.random() * Math.PI * 2
+        });
+    }
+}
+initSmoke();
+
+function drawSmoke(t) {
+    sCtx.clearRect(0, 0, W, H);
+    for (var i = 0; i < smokeParts.length; i++) {
+        var p = smokeParts[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        var pulse = Math.sin(t * 0.0005 + p.phase) * 0.015;
+        var a = p.alpha + pulse;
+        if (p.x < -p.r) p.x = W + p.r;
+        if (p.x > W + p.r) p.x = -p.r;
+        if (p.y < -p.r) p.y = H + p.r;
+        if (p.y > H + p.r) p.y = -p.r;
+        var grad = sCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+        grad.addColorStop(0, 'rgba(100,70,160,' + a + ')');
+        grad.addColorStop(0.5, 'rgba(60,40,100,' + (a * 0.5) + ')');
+        grad.addColorStop(1, 'rgba(20,15,40,0)');
+        sCtx.fillStyle = grad;
+        sCtx.beginPath();
+        sCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        sCtx.fill();
+    }
+}
+
+var drops = [];
+function initRain() {
+    drops = [];
+    var count = Math.floor(W * H / 4000);
+    if (count > 400) count = 400;
+    if (count < 80) count = 80;
+    for (var i = 0; i < count; i++) {
+        drops.push(createDrop());
+    }
+}
+
+function createDrop() {
+    return {
+        x: Math.random() * W,
+        y: Math.random() * H * -1,
+        len: Math.random() * 18 + 8,
+        speed: Math.random() * 4 + 3,
+        alpha: Math.random() * 0.25 + 0.05,
+        wind: 0.3
+    };
+}
+initRain();
+window.addEventListener('resize', function() { initRain(); });
+
+function drawRain() {
+    rCtx.clearRect(0, 0, W, H);
+    for (var i = 0; i < drops.length; i++) {
+        var d = drops[i];
+        d.y += d.speed;
+        d.x += d.wind;
+        if (d.y > H) {
+            drops[i] = createDrop();
+            drops[i].y = -20;
+            continue;
+        }
+        rCtx.beginPath();
+        rCtx.moveTo(d.x, d.y);
+        rCtx.lineTo(d.x + d.wind * 2, d.y + d.len);
+        rCtx.strokeStyle = 'rgba(174,194,224,' + d.alpha + ')';
+        rCtx.lineWidth = 1;
+        rCtx.lineCap = 'round';
+        rCtx.stroke();
+    }
+}
+
+function animate(t) {
+    drawSmoke(t);
+    drawRain();
+    requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+
+var audio = document.getElementById('audioPlayer');
+var playBtn = document.getElementById('playBtn');
+var playIcon = document.getElementById('playIcon');
+var pauseIcon = document.getElementById('pauseIcon');
+var progressBar = document.getElementById('progressBar');
+var progressContainer = document.getElementById('progressContainer');
+var currentTimeEl = document.getElementById('currentTime');
+var trackDurationEl = document.getElementById('trackDuration');
+var trackNameEl = document.getElementById('trackName');
+var isPlaying = false;
+var audioLoaded = false;
+
+var trackFileName = 'LAZZY2WICE - Monochrome.mp3';
+var trackFilePath = 'music/' + trackFileName;
+var trackNameDisplay = trackFileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+trackNameEl.textContent = 'Загрузка...';
+
+fetch(trackFilePath, {method: 'HEAD'}).then(function(response) {
+    if (response.ok) {
+        audio.src = trackFilePath;
+        audio.load();
+    } else {
+        throw new Error('Файл не найден');
+    }
+}).catch(function() {
+    trackNameEl.textContent = 'Файл не найден';
+    trackDurationEl.textContent = '--:--';
+    playBtn.style.opacity = '0.4';
+    playBtn.style.cursor = 'not-allowed';
+    console.error('Аудиофайл не найден. Положите файл ' + trackFilePath);
+});
+
+function formatTime(seconds) {
+    if (isNaN(seconds) || !isFinite(seconds)) return '0:00';
+    var mins = Math.floor(seconds / 60);
+    var secs = Math.floor(seconds % 60);
+    return mins + ':' + (secs < 10 ? '0' : '') + secs;
+}
+
+audio.addEventListener('canplay', function() {
+    audioLoaded = true;
+    trackNameEl.textContent = trackNameDisplay;
+    playBtn.style.opacity = '1';
+    playBtn.style.cursor = 'pointer';
+    if (audio.duration && isFinite(audio.duration)) {
+        trackDurationEl.textContent = formatTime(audio.duration);
+    }
+});
+
+audio.addEventListener('loadedmetadata', function() {
+    if (audio.duration && isFinite(audio.duration)) {
+        trackDurationEl.textContent = formatTime(audio.duration);
+    }
+});
+
+playBtn.addEventListener('click', function() {
+    if (!audioLoaded) {
+        showToast('Аудиофайл не загружен');
+        return;
+    }
+    if (isPlaying) {
+        audio.pause();
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+        isPlaying = false;
+    } else {
+        audio.play().then(function() {
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = 'block';
+            isPlaying = true;
+        }).catch(function(err) {
+            console.error('Ошибка воспроизведения:', err);
+            showToast('Не удалось воспроизвести');
+        });
+    }
+});
+
+audio.addEventListener('timeupdate', function() {
+    if (audio.duration && isFinite(audio.duration)) {
+        var progress = (audio.currentTime / audio.duration) * 100;
+        progressBar.style.width = progress + '%';
+        currentTimeEl.textContent = formatTime(audio.currentTime);
+    }
+});
+
+audio.addEventListener('ended', function() {
+    playIcon.style.display = 'block';
+    pauseIcon.style.display = 'none';
+    isPlaying = false;
+    progressBar.style.width = '0%';
+    currentTimeEl.textContent = '0:00';
+    audio.currentTime = 0;
+});
+
+progressContainer.addEventListener('click', function(e) {
+    if (!audioLoaded || !audio.duration) return;
+    var rect = progressContainer.getBoundingClientRect();
+    var clickX = e.clientX - rect.left;
+    var width = rect.width;
+    var newTime = (clickX / width) * audio.duration;
+    audio.currentTime = newTime;
+    progressBar.style.width = (clickX / width) * 100 + '%';
+});
+</script>
+</body>
+</html>
